@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glew.h"
 #include <QGLWidget>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -7,12 +8,14 @@
 #include <QVector3D>
 #include <vector>
 #include "PMTree.h"
+#include "VBORenderManager.h"
 
 class MainWindow;
 
 class GLWidget3D : public QGLWidget {
 public:
 	MainWindow* mainWin;
+	VBORenderManager vboRenderManager;
 	Camera camera;
 	QPoint lastPos;
 	PMTree tree;
@@ -20,6 +23,7 @@ public:
 public:
 	GLWidget3D(MainWindow *parent);
 	void drawScene();
+	void updateCamera();
 
 protected:
 	void initializeGL();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VBORenderManager.h"
 #include <vector>
 #include <QColor>
 
@@ -7,6 +8,8 @@ using namespace std;
 
 class PMTree {
 private:
+	VBORenderManager* rendManager;
+
 	int shape;
 	float baseSize;
 	float scale;
@@ -51,11 +54,14 @@ private:
 public:
 	PMTree();
 
-	void draw();
-	void drawCone(float baseRadius, float topRadius, float height, const QColor& color);
+	void generate(VBORenderManager* rendManager);
 
 private:
+	void generateStem(int level, glm::mat4 modelMat, float radius, float length);
+	void generateSegment(int level, int index, glm::mat4 modelMat, float radius1, float radius2, float stem_length, float length);
+	float shapeRatio(int shape, float position);
 	float genRand();
 	float genRand(float a, float b);
+	float deg2rad(float deg);
 };
 

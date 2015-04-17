@@ -38,12 +38,15 @@ void GLWidget3D::mouseMoveEvent(QMouseEvent *e) {
 	if (e->buttons() & Qt::LeftButton) {
 		camera.changeXRotation(dy);
 		camera.changeYRotation(dx);
+		updateCamera();
 	} else if (e->buttons() & Qt::RightButton) {
 		camera.changeXYZTranslation(0, 0, -dy * camera.dz * 0.02f);
 		if (camera.dz < -9000) camera.dz = -9000;
 		if (camera.dz > 9000) camera.dz = 9000;
+		updateCamera();
 	} else if (e->buttons() & Qt::MidButton) {
 		camera.changeXYZTranslation(-dx, dy, 0);
+		updateCamera();
 	}
 
 	updateGL();
@@ -55,16 +58,27 @@ void GLWidget3D::mouseMoveEvent(QMouseEvent *e) {
 void GLWidget3D::initializeGL() {
 	glClearColor(0.443, 0.439, 0.458, 0.0);
 
+	//---- GLEW extensions ----
+	GLenum err = glewInit();
+	if (GLEW_OK != err){// Problem: glewInit failed, something is seriously wrong.
+		qDebug() << "Error: " << glewGetErrorString(err);
+	}
+	qDebug() << "Status: Using GLEW " << glewGetString(GLEW_VERSION);
+	const GLubyte* text= glGetString(GL_VERSION);
+	printf("VERSION: %s\n",text);
+
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_COLOR_MATERIAL);
+	glDepthFunc(GL_LEQUAL);
 
-	static GLfloat lightPosition[4] = {0.0f, 0.0f, 100.0f, 0.0f};
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glPointSize(10.0f);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	///
+	vboRenderManager.init();
+	updateCamera();
+
+	tree.generate(&vboRenderManager);
 }
 
 /**
@@ -84,10 +98,10 @@ void GLWidget3D::resizeGL(int width, int height) {
  * This function is called whenever the widget needs to be painted.
  */
 void GLWidget3D::paintGL() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glMatrixMode(GL_MODELVIEW);
-   	camera.applyCamTransform();	
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glDisable(GL_TEXTURE_2D);
 
 	drawScene();		
 }
@@ -96,6 +110,37 @@ void GLWidget3D::paintGL() {
  * Draw the scene.
  */
 void GLWidget3D::drawScene() {
-	tree.draw();
+	//tree.draw();
+	vboRenderManager.renderStaticGeometry("tree");
 }
 
+// this method should be called after any camera transformation (perspective or modelview)
+// it will update viewport, perspective, view matrix, and update the uniforms
+void GLWidget3D::updateCamera() {
+	// update matrices
+	int height = this->height() ? this->height() : 1;
+	glViewport(0, 0, (GLint)this->width(), (GLint)this->height());
+	camera.updatePerspective(this->width(),height);
+	camera.updateCamMatrix();
+	// update uniforms
+	float mvpMatrixArray[16];
+	float mvMatrixArray[16];
+
+	for(int i=0;i<16;i++){
+		mvpMatrixArray[i]=camera.mvpMatrix.data()[i];
+		mvMatrixArray[i]=camera.mvMatrix.data()[i];	
+	}
+	float normMatrixArray[9];
+	for(int i=0;i<9;i++){
+		normMatrixArray[i]=camera.normalMatrix.data()[i];
+	}
+
+	//glUniformMatrix4fv(mvpMatrixLoc,  1, false, mvpMatrixArray);
+	glUniformMatrix4fv(glGetUniformLocation(vboRenderManager.program, "mvpMatrix"),  1, false, mvpMatrixArray);
+	glUniformMatrix4fv(glGetUniformLocation(vboRenderManager.program, "mvMatrix"),  1, false, mvMatrixArray);
+	glUniformMatrix3fv(glGetUniformLocation(vboRenderManager.program, "normalMatrix"),  1, false, normMatrixArray);
+
+	// light poss
+	QVector3D light_dir(-0.40f,0.81f,-0.51f);//camera3D.light_dir.toVector3D();
+	glUniform3f(glGetUniformLocation(vboRenderManager.program, "lightDir"),light_dir.x(),light_dir.y(),light_dir.z());
+}//
