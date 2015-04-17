@@ -190,6 +190,17 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
 	glPopMatrix();
 }
 
+/**
+ * Stemを構成する各segmentを生成する。
+ *
+ * @param level				レベル
+ * @param index				インデックス
+ * @param modelMat			モデル行列
+ * @param radius1
+ * @param radius2
+ * @param stem_length
+ * @param segment_length	
+ */
 void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
 	rendManager->addCylinder("tree", modelMat, QVector3D(0, 0, 0), radius1, radius2, segment_length, QColor(index * 100, 0, 255));
 
