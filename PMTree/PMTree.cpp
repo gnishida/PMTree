@@ -123,31 +123,8 @@ void PMTree::generate(VBORenderManager* rendManager) {
 	float length0 = genRand(scale, scaleV) * genRand(nLength[0], nLengthV[0]);
 	float radius0 = length0 * ratio * genRand(nScale[0], nScaleV[0]);
 
-	float unit_taper;
-	if (nTaper[0] < 1) {
-		unit_taper = nTaper[0];
-	} else if (nTaper[0] < 2) {
-		unit_taper = 2.0 - nTaper[0];
-	} else {
-		unit_taper = 0.0;
-	}
-
 	mat4 modelMat;
-
-	for (int i = 0; i < nCurveRes[0]; ++i) {
-		float length = length0 / nCurveRes[0];
-
-		float taper_z1 = radius0 * (1.0 - unit_taper * (float)i / nCurveRes[0]);
-		float taper_z2 = radius0 * (1.0 - unit_taper * (float)(i + 1) / nCurveRes[0]);
-
-		float r1 = taper_z1;
-		float r2 = taper_z2;
-
-		generateSegment(0, i, modelMat, r1, r2, length0, length);
-
-		modelMat = translate(modelMat, vec3(0, 0, length));
-		modelMat = rotate(modelMat, deg2rad(genRand(nCurve[0] / nCurveRes[0], nCurveV[0] / nCurveRes[0])), vec3(1, 0, 0));
-	}
+	generateStem(0, modelMat, radius0, length0);
 }
 
 /**
