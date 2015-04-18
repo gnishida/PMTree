@@ -170,7 +170,8 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
  * @param segment_length	
  */
 void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
-	int nstacks = ceil(segment_length);
+	// 各segmentを、25cmで区切ってcylinderとして描画する
+	int nstacks = ceil(segment_length / 0.25f);
 	for (int i = 0; i < nstacks; ++i) {
 		float r1 = (radius2 - radius1) / (float)nstacks * (float)i + radius1;
 		float r2 = (radius2 - radius1) / (float)nstacks * (float)(i + 1) + radius1;
