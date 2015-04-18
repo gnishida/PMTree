@@ -51,6 +51,10 @@ private:
 	float prunePowerLow;
 	float prunePowerHigh;
 
+	QColor colorStem;
+	QColor colorLeaveStem;
+	QColor colorLeave;
+
 public:
 	PMTree();
 
@@ -59,6 +63,7 @@ public:
 private:
 	void generateStem(int level, glm::mat4 modelMat, float radius, float length);
 	void generateSegment(int level, int index, glm::mat4 modelMat, float radius1, float radius2, float stem_length, float length);
+	void generateLeaves(int level, glm::mat4 modelMat, int leaves_per_branch, float interval, float quality);
 	float shapeRatio(int shape, float position);
 	float computeFlare(float Z);
 	float computeRadius(float nTaper, float radius, float length, float Z);

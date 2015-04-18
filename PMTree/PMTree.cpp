@@ -115,6 +115,10 @@ PMTree::PMTree() {
 	pruneWidthPeak = 0.5;
 	prunePowerLow = 0.5;
 	prunePowerHigh = 0.5;
+
+	colorStem = QColor(30, 162, 0);
+	colorLeaveStem = QColor(100, 255, 40);
+	colorLeave = QColor(70, 255, 20);
 }
 
 void PMTree::generate(VBORenderManager* rendManager) {
@@ -181,12 +185,23 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 			float Z2 = ((float)index * segment_length + segment_length * (float)(i + 1) / (float)nstacks) / stem_length;
 			r2 *= computeFlare(Z2);
 		}
-		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), QVector3D(0, 0, 0), r1, r2, segment_length / (float)nstacks, QColor(30, 162, 0));
+		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), QVector3D(0, 0, 0), r1, r2, segment_length / (float)nstacks, colorStem);
 	}
 
-	if (level >= levels - 1) return;
+	if (level >= levels - 1) {
+		// 葉を生成する
+		float quality = 0.9f;
+		float offset_child = segment_length * index; 
+		int leaves_per_branch = leaves * shapeRatio(4, offset_child / stem_length) * quality;
+		
+		float interval = segment_length / (leaves_per_branch + 1); // 葉の間の距離
 
-	float start_substem = 0.0f;	// substemを開始するoffset位置
+		generateLeaves(level + 1, modelMat, leaves_per_branch, interval, quality);
+
+		return;
+	}
+
+	float substem_z = 0.0f;	// substemの位置
 
 	float length_base = baseSize * genRand(scale, scaleV);
 	if (level == 0) {
@@ -196,20 +211,20 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 		} else if (segment_length * index >= length_base) {
 			// segmentが、完全にbaseの外なので、一番下からsubstemを生成出来る
 		} else {
-			start_substem = length_base - segment_length * (int)(length_base / segment_length);
+			substem_z = length_base - segment_length * (int)(length_base / segment_length);
 		}
 	}
 
 	float subst_per_segm = nBranches[level + 1] / nCurveRes[level];
-	int substems_eff = subst_per_segm / segment_length * (segment_length - start_substem) + 0.5f; // substemの数
-	float dist = (segment_length - start_substem) / (substems_eff + 1);	// substem間の距離
+	int substems_eff = subst_per_segm / segment_length * (segment_length - substem_z) + 0.5f; // substemの数
+	float dist = (segment_length - substem_z) / (substems_eff + 1);	// substem間の距離
 
 	// z軸まわりに移動
-	start_substem += dist;
-	modelMat = translate(modelMat, vec3(0, 0, start_substem));
+	substem_z += dist;
+	modelMat = translate(modelMat, vec3(0, 0, substem_z));
 
 	for (int s = 0; s < substems_eff; ++s) {
-		float offset_child = segment_length * index + start_substem;
+		float offset_child = segment_length * index + substem_z;
 
 		// x軸まわりに回転
 		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level + 1], nDownAngleV[level + 1])), vec3(1, 0, 0));
@@ -230,8 +245,38 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 
 		// z軸まわりに移動
 		modelMat = translate(modelMat, vec3(0, 0, dist));
-		start_substem += dist;
+		substem_z += dist;
 	}
+}
+
+void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, float interval, float quality) {
+	// z軸まわりに移動
+	float z = interval;
+	modelMat = translate(modelMat, vec3(0, 0, z));
+
+	for (int s = 0; s < leaves_per_branch; ++s) {
+		//float offset_child = segment_length * index + substem_z;
+
+		// x軸まわりに回転
+		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level + 1], nDownAngleV[level + 1])), vec3(1, 0, 0));
+
+		float length = leafScale / sqrtf(quality);
+		float width = leafScale * leafScaleX / sqrtf(quality);
+		
+		// 少しZ軸方向に移動
+		modelMat2 = translate(modelMat2, vec3(0, 0, length));
+
+		// 葉を描画
+		//rendManager->addCircle("tree", modelMat2, QVector3D(0, 0, 0), width, length, colorLeave);
+
+		// z軸まわりに回転
+		modelMat = rotate(modelMat, deg2rad(genRand(nRotate[level + 1], nRotate[level + 1])), vec3(0, 0, 1));
+
+		// z軸方向に移動
+		modelMat = translate(modelMat, vec3(0, 0, interval));
+		z += interval;
+	}
+
 }
 
 float PMTree::shapeRatio(int shape, float position) {
