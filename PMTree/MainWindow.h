@@ -15,6 +15,8 @@ private:
 public:
 	MainWindow(QWidget *parent = 0, Qt::WFlags flags = 0);
 
+public slots:
+	void onOpen();
 };
 
 #endif // MAINWINDOW_H

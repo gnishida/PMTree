@@ -18,7 +18,7 @@ public:
 	VBORenderManager vboRenderManager;
 	Camera camera;
 	QPoint lastPos;
-	PMTree tree;
+	PMTree* tree;
 
 public:
 	GLWidget3D(MainWindow *parent);

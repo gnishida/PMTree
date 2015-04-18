@@ -10,6 +10,8 @@ GLWidget3D::GLWidget3D(MainWindow* mainWin) : QGLWidget(QGLFormat(QGL::SampleBuf
 	camera.zrot = -90;
 	camera.xrot = -90;
 	camera.lookAtZ = 5;
+
+	tree = NULL;
 }
 
 /**
@@ -78,7 +80,7 @@ void GLWidget3D::initializeGL() {
 	vboRenderManager.init();
 	updateCamera();
 
-	tree.generate(&vboRenderManager);
+	tree = new PMTree(&vboRenderManager);
 }
 
 /**

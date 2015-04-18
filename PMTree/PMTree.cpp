@@ -4,25 +4,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <QDomDocument>
 
 using namespace std;
 using namespace glm;
 
 #define M_PI	3.141592653589
 
-PMTree::PMTree() {
+PMTree::PMTree(VBORenderManager* rendManager) : rendManager(rendManager) {
 	shape = 7;
 	baseSize = 0.4;
 	scale = 13.0;
 	scaleV = 3.0;
-	zScale = 1.0;
-	zScaleV = 0.0;
 	levels = 3;
 	ratio = 0.015;
 	ratioPower = 1.2;
 	lobes = 5.0;
 	lobeDepth = 0.07;
 	flare = 0.6;
+
 	nScale.resize(levels + 1);
 	nScaleV.resize(levels + 1);
 	nLength.resize(levels + 1);
@@ -106,7 +106,7 @@ PMTree::PMTree() {
 	nCurveV[3] = 0;
 
 	leaves = 25;
-	leafShapes = 0;
+	leafShape = 0;
 	leafScale = 0.17;
 	leafScaleX = 1;
 	attractionUp = 0.5;
@@ -119,13 +119,167 @@ PMTree::PMTree() {
 	colorStem = QColor(30, 162, 0);
 	colorLeaveStem = QColor(100, 255, 40);
 	colorLeave = QColor(70, 255, 20);
+
+	//generate();
 }
 
-void PMTree::generate(VBORenderManager* rendManager) {
-	this->rendManager = rendManager;
+void PMTree::load(const QString& filename) {
+	QFile file(filename);
 
-	float length0 = genRand(scale, scaleV) * genRand(nLength[0], nLengthV[0]);
+	QDomDocument doc;
+	doc.setContent(&file, true);
+	QDomElement root = doc.documentElement();
+ 
+    QDomNode species = root.firstChild();
+	printf("%s\n", species.nodeName().toUtf8().data());
+
+
+	QDomNode param = species.firstChild();
+
+	while (!param.isNull()) {
+		printf("%s\n", param.nodeName().toUtf8().data());
+		if (param.nodeName() != "param") {
+			param = param.nextSibling();
+			continue;
+		}
+
+		QString name = param.toElement().attribute("name");
+		float value = param.toElement().attribute("value").toFloat();
+
+		printf("%s: %lf\n", name.toUtf8().data(), value);
+
+		if (name == "Shape") {
+			shape = value;
+		} else if (name == "Levels") {
+			levels = value;
+
+			// 配列のサイズを確保
+			nScale.resize(levels + 1, 0);
+			nScaleV.resize(levels + 1, 0);
+			nLength.resize(levels + 1, 0);
+			nLengthV.resize(levels + 1, 0);
+			nTaper.resize(levels + 1, 0);
+			nBaseSplits.resize(levels + 1, 0);
+			nSegSplits.resize(levels + 1, 0);
+			nSplitAngle.resize(levels + 1, 0);
+			nSplitAngleV.resize(levels + 1, 0);
+			nCurveRes.resize(levels + 1, 0);
+			nCurve.resize(levels + 1, 0);
+			nCurveBack.resize(levels + 1, 0);
+			nCurveV.resize(levels + 1, 0);
+			nDownAngle.resize(levels + 1, 0);
+			nDownAngleV.resize(levels + 1, 0);
+			nRotate.resize(levels + 1, 0);
+			nRotateV.resize(levels + 1, 0);
+			nBranches.resize(levels + 1, 0);
+		} else if (name == "Scale") {
+			scale = value;
+		} else if (name == "ScaleV") {
+			scaleV = value;
+		} else if (name == "BaseSize") {
+			baseSize = value;
+		} else if (name == "Ratio") {
+			ratio = value;
+		} else if (name == "RatioPower") {
+			ratioPower = value;
+		} else if (name == "Flare") {
+			flare = value;
+		} else if (name == "Lobes") {
+			lobes = value;
+		} else if (name == "LobeDepth") {
+			lobeDepth = value;
+		} else if (name == "Leaves") {
+			leaves = value;
+		} else if (name == "LeafShape") {
+			leafShape = value;
+		} else if (name == "LeafScale") {
+			leafScale= value;
+		} else if (name == "LeafScaleX") {
+			leafScaleX = value;
+		} else if (name == "LeafQuality") {
+			leafQuality = value;
+		} else if (name == "AttractionUp") {
+			attractionUp = value;
+		} else if (name == "PruneRatio") {
+			pruneRatio = value;
+		} else if (name == "PrunePowerLow") {
+			prunePowerLow = value;
+		} else if (name == "PrunePowerHigh") {
+			prunePowerHigh = value;
+		} else if (name == "PruneWidth") {
+			pruneWidth = value;
+		} else if (name == "PruneWidthPeak") {
+			pruneWidthPeak = value;
+		} else if (name.mid(1) == "Scale") {
+			int level = name.mid(0, 1).toInt();
+			nScale[level] = value;
+		} else if (name.mid(1) == "ScaleV") {
+			int level = name.mid(0, 1).toInt();
+			nScaleV[level] = value;
+		} else if (name.mid(1) == "BaseSplits") {
+			int level = name.mid(0, 1).toInt();
+			nBaseSplits[level] = value;
+		} else if (name.mid(1) == "DownAngle") {
+			int level = name.mid(0, 1).toInt();
+			nDownAngle[level] = value;
+		} else if (name.mid(1) == "DownAngleV") {
+			int level = name.mid(0, 1).toInt();
+			nDownAngleV[level] = value;
+		} else if (name.mid(1) == "Rotate") {
+			int level = name.mid(0, 1).toInt();
+			nRotate[level] = value;
+		} else if (name.mid(1) == "RotateV") {
+			int level = name.mid(0, 1).toInt();
+			nRotateV[level] = value;
+		} else if (name.mid(1) == "Branches") {
+			int level = name.mid(0, 1).toInt();
+			nBranches[level] = value;
+		} else if (name.mid(1) == "Length") {
+			int level = name.mid(0, 1).toInt();
+			nLength[level] = value;
+		} else if (name.mid(1) == "LengthV") {
+			int level = name.mid(0, 1).toInt();
+			nLengthV[level] = value;
+		} else if (name.mid(1) == "Taper") {
+			int level = name.mid(0, 1).toInt();
+			nTaper[level] = value;
+		} else if (name.mid(1) == "SegSplits") {
+			int level = name.mid(0, 1).toInt();
+			nSegSplits[level] = value;
+		} else if (name.mid(1) == "SplitAngle") {
+			int level = name.mid(0, 1).toInt();
+			nSplitAngle[level] = value;
+		} else if (name.mid(1) == "SplitAngleV") {
+			int level = name.mid(0, 1).toInt();
+			nSplitAngleV[level] = value;
+		} else if (name.mid(1) == "CurveRes") {
+			int level = name.mid(0, 1).toInt();
+			nCurveRes[level] = value;
+		} else if (name.mid(1) == "Curve") {
+			int level = name.mid(0, 1).toInt();
+			nCurve[level] = value;
+		} else if (name.mid(1) == "CurveBack") {
+			int level = name.mid(0, 1).toInt();
+			nCurveBack[level] = value;
+		} else if (name.mid(1) == "CurveV") {
+			int level = name.mid(0, 1).toInt();
+			nCurveV[level] = value;
+		}
+
+		param = param.nextSibling();
+	}
+
+	generate();
+}
+
+void PMTree::generate() {
+	rendManager->removeStaticGeometry("tree");
+
+	scale_tree = genRand(scale, scaleV);
+	float length0 = genRand(nLength[0], nLengthV[0]) * scale_tree;
 	float radius0 = length0 * ratio * genRand(nScale[0], nScaleV[0]);
+
+	length_base = baseSize * scale_tree;
 
 	mat4 modelMat;
 	generateStem(0, modelMat, radius0, length0);
@@ -202,8 +356,7 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 	}
 
 	float substem_z = 0.0f;	// substemの位置
-
-	float length_base = baseSize * genRand(scale, scaleV);
+		
 	if (level == 0) {
 		if (segment_length * (index + 1) < length_base) {
 			// segmentが全てbaseの一部なので、substemは生成しない
@@ -255,8 +408,6 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 	modelMat = translate(modelMat, vec3(0, 0, z));
 
 	for (int s = 0; s < leaves_per_branch; ++s) {
-		//float offset_child = segment_length * index + substem_z;
-
 		// x軸まわりに回転
 		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level], nDownAngleV[level])), vec3(1, 0, 0));
 
@@ -270,7 +421,6 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 		modelMat2 = rotate(modelMat2, (float)M_PI * 0.5f, vec3(1, 0, 0));
 
 		// 葉を描画
-		//rendManager->addCircle("tree", modelMat2, QVector3D(0, 0, 0), width, length, colorLeave);
 		rendManager->addCircle("tree", modelMat2, width, length, colorLeave);
 
 		// z軸まわりに回転
@@ -280,7 +430,6 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 		modelMat = translate(modelMat, vec3(0, 0, interval));
 		z += interval;
 	}
-
 }
 
 float PMTree::shapeRatio(int shape, float position) {

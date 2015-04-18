@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "VBORenderManager.h"
 #include <vector>
@@ -10,12 +10,11 @@ class PMTree {
 private:
 	VBORenderManager* rendManager;
 
+	// PMパラメータ
 	int shape;
 	float baseSize;
 	float scale;
 	float scaleV;
-	float zScale;
-	float zScaleV;
 	int levels;
 	float ratio;
 	float ratioPower;
@@ -41,9 +40,10 @@ private:
 	vector<float> nRotateV;
 	vector<float> nBranches;
 	int leaves;
-	float leafShapes;
+	float leafShape;
 	float leafScale;
 	float leafScaleX;
+	float leafQuality;		// 論文にはないけど、qualityという記述はあるので、追加
 	float attractionUp;
 	float pruneRatio;
 	float pruneWidth;
@@ -55,12 +55,17 @@ private:
 	QColor colorLeaveStem;
 	QColor colorLeave;
 
-public:
-	PMTree();
+	// 初期化時に、乱数によって決定される値
+	float scale_tree;
+	float length_base;
 
-	void generate(VBORenderManager* rendManager);
+public:
+	PMTree(VBORenderManager* rendManager);
+
+	void load(const QString& filename);
 
 private:
+	void generate();
 	void generateStem(int level, glm::mat4 modelMat, float radius, float length);
 	void generateSegment(int level, int index, glm::mat4 modelMat, float radius1, float radius2, float stem_length, float length);
 	void generateLeaves(int level, glm::mat4 modelMat, int leaves_per_branch, float interval, float quality);
