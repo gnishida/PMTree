@@ -157,7 +157,16 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
 		generateSegment(level, i, modelMat, r1, r2, length, segment_length);
 
 		modelMat = translate(modelMat, vec3(0, 0, segment_length));
-		modelMat = rotate(modelMat, deg2rad(genRand(nCurve[level] / nCurveRes[level], nCurveV[level] / nCurveRes[level])), vec3(1, 0, 0));
+
+		if (nCurveBack[level] == 0.0f) {
+			modelMat = rotate(modelMat, deg2rad(genRand(nCurve[level] / nCurveRes[level], nCurveV[level] / nCurveRes[level])), vec3(1, 0, 0));
+		} else {
+			if (i < nCurveRes[level] / 2) {
+				modelMat = rotate(modelMat, deg2rad(genRand(nCurve[level] / nCurveRes[level] * 2.0f, nCurveV[level] / nCurveRes[level] * 2.0f)), vec3(1, 0, 0));
+			} else {
+				modelMat = rotate(modelMat, deg2rad(genRand(nCurveBack[level] / nCurveRes[level] * 2.0f, nCurveV[level] / nCurveRes[level] * 2.0f)), vec3(1, 0, 0));
+			}
+		}
 	}
 }
 
@@ -214,7 +223,6 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 		}
 		float radius_child = radius1 * (length_child / stem_length);
 
-		//rendManager->addCylinder("tree", modelMat2, QVector3D(0, 0, 0), 0.1, 0.1, 2, QColor(index * 100, 0, 255));
 		generateStem(level + 1, modelMat2, radius_child, length_child);
 
 		// z軸まわりに回転
