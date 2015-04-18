@@ -120,9 +120,6 @@ PMTree::PMTree(VBORenderManager* rendManager) : rendManager(rendManager) {
 	colorLeave = QColor(100, 255, 40);
 
 	//generate();
-
-	mat4 modelMat;
-	rendManager->addCylinder("tree", modelMat, 0.0003, 0.001, 0.03, colorStem, 12);
 }
 
 /**
@@ -279,7 +276,8 @@ void PMTree::load(const QString& filename) {
 void PMTree::generate() {
 	rendManager->removeStaticGeometry("tree");
 
-	scale_tree = genRand(scale, scaleV);
+	//scale_tree = genRand(scale, scaleV);
+	scale_tree = genRand(scale, 0.0f);
 	float length0 = genRand(nLength[0], nLengthV[0]) * scale_tree;
 	float radius0 = length0 * ratio * genRand(nScale[0], nScaleV[0]);
 
@@ -287,6 +285,8 @@ void PMTree::generate() {
 
 	mat4 modelMat;
 	generateStem(0, modelMat, radius0, length0);
+
+	cout << "generation done." << endl;
 }
 
 /**
@@ -349,7 +349,7 @@ float PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1
 			float Z2 = ((float)index * segment_length + segment_length * (float)(i + 1) / (float)nstacks) / stem_length;
 			r2 *= computeFlare(Z2);
 		}
-		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), r1, r2, segment_length / (float)nstacks, colorStem, 12, 2);
+		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), r1, r2, segment_length / (float)nstacks, colorStem, 12, 10);
 	}
 
 	if (level >= levels - 1) {

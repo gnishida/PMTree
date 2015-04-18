@@ -467,8 +467,6 @@ void VBORenderManager::addCylinder(const QString& geoName, const QVector3D& cent
 void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color, int slices, int stacks) {
 	std::vector<Vertex> verts;
 
-	slices = 10;
-	stacks = 10;
 	for (int i = 0; i < stacks; ++i) {
 		float z1 = height / stacks * i;
 		float z2 = height / stacks * (i + 1);
@@ -508,11 +506,14 @@ void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& mode
 			verts.push_back(Vertex(glm::vec3(p1), color, glm::vec3(n1), glm::vec3()));
 			verts.push_back(Vertex(glm::vec3(p2), color, glm::vec3(n2), glm::vec3()));
 			verts.push_back(Vertex(glm::vec3(p3), color, glm::vec3(n3), glm::vec3()));
+
+			verts.push_back(Vertex(glm::vec3(p1), color, glm::vec3(n1), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p3), color, glm::vec3(n3), glm::vec3()));
 			verts.push_back(Vertex(glm::vec3(p4), color, glm::vec3(n4), glm::vec3()));
 		}
 	}
 
-	addStaticGeometry(geoName, verts, "", GL_QUADS, 1|mode_Lighting);
+	addStaticGeometry(geoName, verts, "", GL_TRIANGLES, 1|mode_Lighting);
 }
 
 /**

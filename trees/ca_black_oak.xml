@@ -17,6 +17,7 @@
     <param name="LeafShape" value="0"/>
     <param name="LeafScale" value="0.12"/>
     <param name="LeafScaleX" value="0.66"/>
+    <param name='LeafQuality' value='1.0'/>
     <param name="AttractionUp" value="0.8"/>
     <!-- level 0 -->
     <param name="0Scale" value="1.0"/>
