@@ -131,13 +131,9 @@ void PMTree::load(const QString& filename) {
 	QDomElement root = doc.documentElement();
  
     QDomNode species = root.firstChild();
-	printf("%s\n", species.nodeName().toUtf8().data());
-
-
 	QDomNode param = species.firstChild();
 
 	while (!param.isNull()) {
-		printf("%s\n", param.nodeName().toUtf8().data());
 		if (param.nodeName() != "param") {
 			param = param.nextSibling();
 			continue;
@@ -145,8 +141,6 @@ void PMTree::load(const QString& filename) {
 
 		QString name = param.toElement().attribute("name");
 		float value = param.toElement().attribute("value").toFloat();
-
-		printf("%s: %lf\n", name.toUtf8().data(), value);
 
 		if (name == "Shape") {
 			shape = value;
