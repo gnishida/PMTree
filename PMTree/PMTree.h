@@ -60,6 +60,8 @@ private:
 	void generateStem(int level, glm::mat4 modelMat, float radius, float length);
 	void generateSegment(int level, int index, glm::mat4 modelMat, float radius1, float radius2, float stem_length, float length);
 	float shapeRatio(int shape, float position);
+	float computeFlare(float Z);
+	float computeRadius(float nTaper, float radius, float length, float Z);
 	float genRand();
 	float genRand(float a, float b);
 	float deg2rad(float deg);

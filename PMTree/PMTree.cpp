@@ -136,24 +136,12 @@ void PMTree::generate(VBORenderManager* rendManager) {
  * @param length	Stemの長さ
  */
 void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) {
-	float unit_taper;
-	if (nTaper[level] < 1) {
-		unit_taper = nTaper[level];
-	} else if (nTaper[level] < 2) {
-		unit_taper = 2.0 - nTaper[level];
-	} else {
-		unit_taper = 0.0;
-	}
-
 	for (int i = 0; i < nCurveRes[level]; ++i) {
 		float segment_length = length / nCurveRes[level];
 
-		float taper_z1 = radius * (1.0 - unit_taper * (float)i / nCurveRes[level]);
-		float taper_z2 = radius * (1.0 - unit_taper * (float)(i + 1) / nCurveRes[level]);
-
-		float r1 = taper_z1;
-		float r2 = taper_z2;
-
+		float r1 = computeRadius(nTaper[level], radius, length, (float)i / nCurveRes[level]);
+		float r2 = computeRadius(nTaper[level], radius, length, (float)(i + 1) / nCurveRes[level]);
+		
 		generateSegment(level, i, modelMat, r1, r2, length, segment_length);
 
 		modelMat = translate(modelMat, vec3(0, 0, segment_length));
@@ -182,7 +170,18 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
  * @param segment_length	
  */
 void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
-	rendManager->addCylinder("tree", modelMat, QVector3D(0, 0, 0), radius1, radius2, segment_length, QColor(30, 162, 0));
+	int nstacks = ceil(segment_length);
+	for (int i = 0; i < nstacks; ++i) {
+		float r1 = (radius2 - radius1) / (float)nstacks * (float)i + radius1;
+		float r2 = (radius2 - radius1) / (float)nstacks * (float)(i + 1) + radius1;
+		if (level == 0) {
+			float Z1 = ((float)index * segment_length + segment_length * (float)i / (float)nstacks) / stem_length;
+			r1 *= computeFlare(Z1);
+			float Z2 = ((float)index * segment_length + segment_length * (float)(i + 1) / (float)nstacks) / stem_length;
+			r2 *= computeFlare(Z2);
+		}
+		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), QVector3D(0, 0, 0), r1, r2, segment_length / (float)nstacks, QColor(30, 162, 0));
+	}
 
 	if (level >= levels - 1) return;
 
@@ -260,6 +259,49 @@ float PMTree::shapeRatio(int shape, float position) {
 	}
 }
 
+float PMTree::computeFlare(float Z) {
+	float y = max(0.0f, 1.0f - 8.0 * Z);
+	return flare * (pow(100.0f, y) - 1.0f) / 100.0f + 1.0f;
+}
+
+float PMTree::computeRadius(float nTaper, float radius, float length, float Z) {
+	float unit_taper;
+	if (nTaper < 1) {
+		unit_taper = nTaper;
+	} else if (nTaper < 2) {
+		unit_taper = 2.0 - nTaper;
+	} else {
+		unit_taper = 0.0;
+	}
+
+	float taper_z = radius * (1.0 - unit_taper * Z);
+
+	if (nTaper < 1) {
+		return taper_z;
+	} else {
+		float Z2 = (1.0f - Z) * length;
+		
+		float depth;
+		if (nTaper < 2 || Z2 < taper_z) {
+			depth = 1.0f;
+		} else {
+			depth = nTaper - 2.0f;
+		}
+
+		float Z3;
+		if (nTaper < 2) {
+			Z3 = Z2;
+		} else {
+			Z3 = fabs(Z2 - 2.0f * taper_z * (int)(Z2 / (2.0f * taper_z) + 0.5));
+		}
+
+		if (nTaper < 2 && Z3 >= taper_z) {
+			return taper_z;
+		} else {
+			return (1.0f - depth) * taper_z + depth * sqrtf(taper_z * taper_z - (Z3 - taper_z) * (Z3 - taper_z));
+		}
+	}
+}
 
 /**
  * Uniform乱数[0, 1)を生成する
