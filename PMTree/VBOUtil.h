@@ -5,6 +5,7 @@
 #include "qvector3d.h"
 #include <QColor>
 #include <vector>
+#include <glm/glm.hpp>
 
 /////////////////////////
 // Contaisn the Vertex structure to do the rendering
@@ -50,24 +51,25 @@ struct Vertex{
 		info[14] = tW;
 	}
 
-	Vertex(QVector3D pos,QColor color,QVector3D normal,QVector3D tex) {
-		info[0]=pos.x();
-		info[1]=pos.y();
-		info[2]=pos.z();
+	Vertex(const glm::vec3& pos, const QColor& color, const glm::vec3& normal, const glm::vec3& tex) {
+		info[0] = pos.x;
+		info[1] = pos.y;
+		info[2] = pos.z;
 
-		info[4]=color.redF();
-		info[5]=color.greenF();
-		info[6]=color.blueF();
-		info[7]=color.alphaF();
+		info[4] = color.redF();
+		info[5] = color.greenF();
+		info[6] = color.blueF();
+		info[7] = color.alphaF();
 
-		info[8]=normal.x();
-		info[9]=normal.y();
-		info[10]=normal.z();
+		info[8] = normal.x;
+		info[9] = normal.y;
+		info[10] = normal.z ;
 
-		info[12]=tex.x();
-		info[13]=tex.y();
-		info[14]=tex.z();
-	}//
+		info[12] = tex.x;
+		info[13] = tex.y;
+		info[14] = tex.z;
+	}
+
 	Vertex(QVector3D* pos,QColor* color=0,QVector3D* normal=0,QVector3D* tex=0){
 		if(pos!=0){
 			info[0]=pos->x();

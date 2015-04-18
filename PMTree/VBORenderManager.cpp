@@ -1,5 +1,4 @@
 ﻿#include "VBORenderManager.h"
-//#include "triangle\triangle.c"
 
 #define M_PI	3.14159265
 
@@ -175,6 +174,7 @@ bool VBORenderManager::checkIfGeoNameInUse(QString geoName){
 	return (geoName2StaticRender.contains(geoName));
 }//
 
+/*
 void VBORenderManager::addTriangle(const QString& geoName, vector<QVector3D>& polygon, vector<QVector3D>& texCoord, const QString& textureName) {
 	QVector3D normal = QVector3D::crossProduct(polygon[1] - polygon[0], polygon[2] - polygon[0]).normalized();
 
@@ -369,159 +369,14 @@ void VBORenderManager::addLine(const QString& geoName, const QVector3D& pt1, con
 
 	addStaticGeometry(geoName, vert, "", GL_LINES, 1);
 }
+*/
 
-/**
- * 指定されたポリゴンに基づいて、ジオメトリを生成する。（テクスチャ版）
- * 凹型のポリゴンにも対応するよう、ポリゴンは台形にtessellateする。
- */
-/*
-void VBORenderManager::addPolygon(const QString& geoName, vector<QVector3D>& polygon, float z, const QString& textureName, const QVector3D& texScale) {
-	if (polygon.size() < 3) return;
-
-	VBORenderManager::PolygonSetP polySet;
-	VBORenderManager::polygonP tempPolyP;
-
-	// GEN (to find the OBB of the polygon)
-	QVector3D size;
-	QMatrix4x4 xformMat;
-	Polygon3D::getLoopOBB2(polygon, size, xformMat);
-	Loop3D xformPos;
-	Polygon3D::transformLoop(polygon, xformPos, xformMat);
-
-	float minX=FLT_MAX,minY=FLT_MAX;
-	float maxX=-FLT_MAX,maxY=-FLT_MAX;
-
-	// ポリゴンの頂点情報を、pointP型に変換する
-	std::vector<VBORenderManager::pointP> vP;
-	vP.resize(polygon.size());
-	for (int pN = 0; pN < xformPos.size(); pN++) {
-		vP[pN]=boost::polygon::construct<VBORenderManager::pointP>(polygon[pN].x(), polygon[pN].y());
-		minX=std::min<float>(minX,xformPos[pN].x());
-		minY=std::min<float>(minY,xformPos[pN].y());
-		maxX=std::max<float>(maxX,xformPos[pN].x());
-		maxY=std::max<float>(maxY,xformPos[pN].y());
-	}
-	// GEN
-
-
-
-	// 台形にtessellateする
-	boost::polygon::set_points(tempPolyP,vP.begin(),vP.end());
-	polySet+=tempPolyP;
-	std::vector<VBORenderManager::polygonP> allP;
-	boost::polygon::get_trapezoids(allP,polySet);
-
-	// 各台形について
-	std::vector<Vertex> verts;
-	for (int pN = 0; pN < allP.size(); pN++) {
-		boost::polygon::polygon_with_holes_data<double>::iterator_type itPoly=allP[pN].begin();
-
-		// 各台形について、pointsに頂点座標を格納する
-		Polygon3D points;
-		std::vector<QVector3D> texP;
-		while (itPoly != allP[pN].end()) {
-			VBORenderManager::pointP cP = *itPoly;
-			points.push_back(QVector3D(cP.x(), cP.y(), z));
-
-			QVector3D cP2 = xformMat * QVector3D(cP.x(), cP.y(), 0);
-			texP.push_back(QVector3D((cP2.x() - minX) / size.x(), (cP2.y() - minY) / size.y(), 0.0f));
-			itPoly++;
-		}
-
-		// 三角形の場合は、無理やり四角形にしちゃう
-		while (points.contour.size() < 4) {
-			points.push_back(points.contour.back());
-			texP.push_back(texP.back());
-		}
-
-		// GEN 
-		// Sometimes, the polygon is formed in CW order, so we have to reorient it in CCW order.
-		points.correct();
-
-		QVector3D normal = QVector3D::crossProduct(points[1] - points[0], points[2] - points[0]).normalized();
-		verts.push_back(Vertex(points[0], QColor(), normal, texP[0]));
-		verts.push_back(Vertex(points[1], QColor(), normal, texP[1]));
-		verts.push_back(Vertex(points[2], QColor(), normal, texP[2]));
-		verts.push_back(Vertex(points[3], QColor(), normal, texP[3]));
-	}
-
-	addStaticGeometry(geoName, verts, textureName, GL_QUADS, 2|mode_Lighting);
-}*/
-
-/**
- * 指定されたポリゴンに基づいて、ジオメトリを生成する。（カラー版）
- * 凹型のポリゴンにも対応するよう、ポリゴンは台形にtessellateする。
- */
-/*
-void VBORenderManager::addPolygon(const QString& geoName, Loop3D& polygon, float z, const QColor& color, bool inverseLoop) {
-	if (polygon.size() < 3) return;
-
-	PolygonSetP polySet;
-	polygonP tempPolyP;
-
-	// ポリゴンの頂点情報を、pointP型に変換する
-	std::vector<pointP> vP;
-	vP.resize(polygon.size());
-	for (int pN = 0; pN < polygon.size(); pN++) {
-		vP[pN]=boost::polygon::construct<pointP>(polygon[pN].x(), polygon[pN].y());
-	}
-
-	// ポリゴンをclosedにする
-	if (polygon.back().x() != polygon.front().x() && polygon.back().y() != polygon.front().y()) {
-		vP.push_back(vP[0]);
-	}
-
-	// 台形にtessellateする
-	boost::polygon::set_points(tempPolyP, vP.begin(), vP.end());
-	polySet += tempPolyP;
-	std::vector<polygonP> allP;
-	boost::polygon::get_trapezoids(allP,polySet);
-		
-	// 各台形について
-	std::vector<Vertex> verts;
-	for (int pN = 0; pN < allP.size(); pN++) {
-		boost::polygon::polygon_with_holes_data<double>::iterator_type itPoly = allP[pN].begin();
-
-		// 各台形について、pointsに頂点座標を格納する
-		Polygon3D points;
-		while (itPoly != allP[pN].end()) {
-			pointP cP = *itPoly;
-
-			points.push_back(QVector3D(cP.x(), cP.y(), z));
-
-			itPoly++;
-		}
-		if (points.contour.size() == 0) continue;
-
-		// 三角形の場合は、無理やり四角形にしちゃう
-		while (points.contour.size() < 4)
-			points.push_back(points.contour.back());
-
-		// GEN 
-		// Sometimes, the polygon is formed in CW order, so we have to reorient it in CCW order.
-		points.correct();
-		
-		QVector3D normal = QVector3D::crossProduct(points[1] - points[0], points[2] - points[0]).normalized();
-		if (inverseLoop) {
-			verts.push_back(Vertex(points[0], color, -normal, QVector3D()));
-			verts.push_back(Vertex(points[3], color, -normal, QVector3D()));
-			verts.push_back(Vertex(points[2], color, -normal, QVector3D()));
-			verts.push_back(Vertex(points[1], color, -normal, QVector3D()));
-		} else {
-			verts.push_back(Vertex(points[0], color, normal, QVector3D()));
-			verts.push_back(Vertex(points[1], color, normal, QVector3D()));
-			verts.push_back(Vertex(points[2], color, normal, QVector3D()));
-			verts.push_back(Vertex(points[3], color, normal, QVector3D()));
-		}
-	}
-
-	addStaticGeometry(geoName, verts, "", GL_QUADS, 1|mode_Lighting);
-}*/
 
 /**
  * ポリゴンプリズムを構築する。（テクスチャ版）
  * テクスチャは側面のみ。上面と底面はなし。
  */
+/*
 void VBORenderManager::addPrism(const QString& geoName, vector<QVector3D>& polygon, float baseHeight, float topHeight, const QString& textureName) {
 	std::vector<Vertex> verts;
 
@@ -540,31 +395,6 @@ void VBORenderManager::addPrism(const QString& geoName, vector<QVector3D>& polyg
 	}
 	addStaticGeometry(geoName, verts, textureName, GL_QUADS, 2|mode_Lighting);
 }
-
-/**
- * ポリゴンプリズムを構築する。（カラー版）
- * addTopAndBase=trueなら、上面と底面を追加する。
- */
-/*
-void VBORenderManager::addPrism(const QString& geoName, Loop3D& polygon, float baseHeight, float topHeight, const QColor& color, bool addTopAndBase) {
-	std::vector<Vertex> verts;
-
-	for (int i = 0; i < polygon.size(); i++) {
-		int next = (i + 1) % polygon.size();
-
-		QVector3D normal = QVector3D::crossProduct(polygon[next] - polygon[i], QVector3D(0,0,1)).normalized();
-		verts.push_back(Vertex(QVector3D(polygon[i].x(), polygon[i].y(), baseHeight), color, normal, QVector3D()));
-		verts.push_back(Vertex(QVector3D(polygon[next].x(), polygon[next].y(), baseHeight), color, normal, QVector3D()));
-		verts.push_back(Vertex(QVector3D(polygon[next].x(), polygon[next].y(), topHeight), color, normal, QVector3D()));
-		verts.push_back(Vertex(QVector3D(polygon[i].x(), polygon[i].y(), topHeight), color, normal, QVector3D()));			
-	}
-	addStaticGeometry(geoName, verts, "", GL_QUADS, 1|mode_Lighting);
-
-	if (addTopAndBase) {
-		addPolygon(geoName, polygon, baseHeight, color, true);
-		addPolygon(geoName, polygon, topHeight, color, false);
-	}
-}*/
 
 void VBORenderManager::addWedge(const QString& geoName, vector<QVector3D>& polygon, float baseHeight, float topHeight, const QString& textureName) {
 	std::vector<Vertex> verts;
@@ -589,11 +419,13 @@ void VBORenderManager::addWedge(const QString& geoName, vector<QVector3D>& polyg
 
 	addStaticGeometry(geoName, verts, textureName, GL_QUADS, 2|mode_Lighting);
 }
+*/
 
 /**
  * 円柱を構築する。（テクスチャ版）
 * テクスチャは側面のみ。上面と底面はなし。
  */
+/*
 void VBORenderManager::addCylinder(const QString& geoName, const QVector3D& center, float baseRadius, float topRadius, float height, const QString& textureName) {
 	std::vector<Vertex> verts;
 
@@ -626,15 +458,14 @@ void VBORenderManager::addCylinder(const QString& geoName, const QVector3D& cent
 
 	addStaticGeometry(geoName, verts, textureName, GL_QUADS, 2|mode_Lighting);
 }
+*/
 
 /**
  * 円柱を構築する。（カラー版）
-* テクスチャは側面のみ。上面と底面はなし。
+ * 側面のみ。上面と底面はなし。
  */
-void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& modelMat, const QVector3D& center, float baseRadius, float topRadius, float height, const QColor& color) {
+void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color) {
 	std::vector<Vertex> verts;
-
-	glm::vec4 c(center.x(), center.y(), center.z(), 0.0f);
 
 	int slices = 10;
 	int stacks = 10;
@@ -660,19 +491,58 @@ void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& mode
 			glm::vec4 p2(x2, y2, z1, 1.0f);
 			glm::vec4 p3(x3, y3, z2, 1.0f);
 			glm::vec4 p4(x4, y4, z2, 1.0f);
-			p1 = modelMat * (p1 + c);
-			p2 = modelMat * (p2 + c);
-			p3 = modelMat * (p3 + c);
-			p4 = modelMat * (p4 + c);
+			p1 = modelMat * p1;
+			p2 = modelMat * p2;
+			p3 = modelMat * p3;
+			p4 = modelMat * p4;
 
-			verts.push_back(Vertex(QVector3D(p1.x, p1.y, p1.z) + center, color, QVector3D(x1, y1, 0), QVector3D()));
-			verts.push_back(Vertex(QVector3D(p2.x, p2.y, p2.z) + center, color, QVector3D(x2, y2, 0), QVector3D()));
-			verts.push_back(Vertex(QVector3D(p3.x, p3.y, p3.z) + center, color, QVector3D(x3, y3, 0), QVector3D()));
-			verts.push_back(Vertex(QVector3D(p4.x, p4.y, p4.z) + center, color, QVector3D(x4, y4, 0), QVector3D()));
+			verts.push_back(Vertex(glm::vec3(p1), color, glm::vec3(x1, y1, 0), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p2), color, glm::vec3(x2, y2, 0), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p3), color, glm::vec3(x3, y3, 0), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p4), color, glm::vec3(x4, y4, 0), glm::vec3()));
 		}
 	}
 
 	addStaticGeometry(geoName, verts, "", GL_QUADS, 1|mode_Lighting);
+}
+
+/**
+ * 円を構築する。（カラー版）
+ *
+ * @param radius1		X軸方向の半径
+ * @param radius2		Y軸方向の半径
+ */
+void VBORenderManager::addCircle(const QString& geoName, const glm::mat4& modelMat, float radius1, float radius2, const QColor& color) {
+	std::vector<Vertex> verts;
+
+	// 法線ベクトル
+	glm::vec4 norm(0, 0, 1.0f, 1.0f);
+	norm = modelMat * norm;
+
+	glm::vec4 p0(0, 0, 0, 1.0f);
+	p0 = modelMat * p0;
+	
+	int slices = 8;
+	for (int i = 0; i < slices; ++i) {
+		float theta1 = M_PI * 2.0f * i / slices;
+		float theta2 = M_PI * 2.0f * (i + 1) / slices;
+
+		float x1 = radius1 * cosf(theta1);
+		float y1 = radius2 * sinf(theta1);
+		float x2 = radius1 * cosf(theta2);
+		float y2 = radius2 * sinf(theta2);
+
+		glm::vec4 p1(x1, y1, 0, 1.0f);
+		p1 = modelMat * p1;
+		glm::vec4 p2(x2, y2, 0, 1.0f);
+		p2 = modelMat * p2;
+
+		verts.push_back(Vertex(glm::vec3(p0), color, glm::vec3(norm), glm::vec3()));
+		verts.push_back(Vertex(glm::vec3(p1), color, glm::vec3(norm), glm::vec3()));
+		verts.push_back(Vertex(glm::vec3(p2), color, glm::vec3(norm), glm::vec3()));
+	}
+
+	addStaticGeometry(geoName, verts, "", GL_TRIANGLES, 1|mode_Lighting);
 }
 
 /**

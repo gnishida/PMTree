@@ -185,7 +185,7 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 			float Z2 = ((float)index * segment_length + segment_length * (float)(i + 1) / (float)nstacks) / stem_length;
 			r2 *= computeFlare(Z2);
 		}
-		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), QVector3D(0, 0, 0), r1, r2, segment_length / (float)nstacks, colorStem);
+		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), r1, r2, segment_length / (float)nstacks, colorStem);
 	}
 
 	if (level >= levels - 1) {
@@ -258,7 +258,7 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 		//float offset_child = segment_length * index + substem_z;
 
 		// x軸まわりに回転
-		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level + 1], nDownAngleV[level + 1])), vec3(1, 0, 0));
+		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level], nDownAngleV[level])), vec3(1, 0, 0));
 
 		float length = leafScale / sqrtf(quality);
 		float width = leafScale * leafScaleX / sqrtf(quality);
@@ -266,11 +266,15 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 		// 少しZ軸方向に移動
 		modelMat2 = translate(modelMat2, vec3(0, 0, length));
 
+		// X軸まわりに90度回転
+		modelMat2 = rotate(modelMat2, (float)M_PI * 0.5f, vec3(1, 0, 0));
+
 		// 葉を描画
 		//rendManager->addCircle("tree", modelMat2, QVector3D(0, 0, 0), width, length, colorLeave);
+		rendManager->addCircle("tree", modelMat2, width, length, colorLeave);
 
 		// z軸まわりに回転
-		modelMat = rotate(modelMat, deg2rad(genRand(nRotate[level + 1], nRotate[level + 1])), vec3(0, 0, 1));
+		modelMat = rotate(modelMat, deg2rad(genRand(nRotate[level], nRotate[level])), vec3(0, 0, 1));
 
 		// z軸方向に移動
 		modelMat = translate(modelMat, vec3(0, 0, interval));
