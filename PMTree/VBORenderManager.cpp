@@ -467,6 +467,8 @@ void VBORenderManager::addCylinder(const QString& geoName, const QVector3D& cent
 void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color, int slices, int stacks) {
 	std::vector<Vertex> verts;
 
+	slices = 10;
+	stacks = 10;
 	for (int i = 0; i < stacks; ++i) {
 		float z1 = height / stacks * i;
 		float z2 = height / stacks * (i + 1);
