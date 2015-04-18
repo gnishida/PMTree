@@ -67,7 +67,7 @@ public:
 private:
 	void generate();
 	void generateStem(int level, glm::mat4 modelMat, float radius, float length);
-	void generateSegment(int level, int index, glm::mat4 modelMat, float radius1, float radius2, float stem_length, float length);
+	float generateSegment(int level, int index, glm::mat4 modelMat, float radius1, float radius2, float stem_length, float length);
 	void generateLeaves(int level, glm::mat4 modelMat, int leaves_per_branch, float interval, float quality);
 	float shapeRatio(int shape, float position);
 	float computeFlare(float Z);

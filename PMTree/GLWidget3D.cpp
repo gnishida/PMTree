@@ -47,7 +47,7 @@ void GLWidget3D::mouseMoveEvent(QMouseEvent *e) {
 		if (camera.dz > 9000) camera.dz = 9000;
 		updateCamera();
 	} else if (e->buttons() & Qt::MidButton) {
-		camera.changeXYZTranslation(-dx, dy, 0);
+		camera.changeXYZTranslation(-dx * 0.02f, dy * 0.02f, 0);
 		updateCamera();
 	}
 

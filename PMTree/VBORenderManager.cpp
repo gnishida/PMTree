@@ -496,10 +496,19 @@ void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& mode
 			p3 = modelMat * p3;
 			p4 = modelMat * p4;
 
-			verts.push_back(Vertex(glm::vec3(p1), color, glm::vec3(x1, y1, 0), glm::vec3()));
-			verts.push_back(Vertex(glm::vec3(p2), color, glm::vec3(x2, y2, 0), glm::vec3()));
-			verts.push_back(Vertex(glm::vec3(p3), color, glm::vec3(x3, y3, 0), glm::vec3()));
-			verts.push_back(Vertex(glm::vec3(p4), color, glm::vec3(x4, y4, 0), glm::vec3()));
+			glm::vec4 n1(x1, y1, sqrtf(x1*x1+y1*y1) / height * (baseRadius - topRadius), 0.0f);
+			glm::vec4 n2(x2, y2, sqrtf(x2*x2+y2*y2) / height * (baseRadius - topRadius), 0.0f);
+			glm::vec4 n3(x3, y3, sqrtf(x3*x3+y3*y3) / height * (baseRadius - topRadius), 0.0f);
+			glm::vec4 n4(x4, y4, sqrtf(x4*x4+y4*y4) / height * (baseRadius - topRadius), 0.0f);
+			n1 = modelMat * n1;
+			n2 = modelMat * n2;
+			n3 = modelMat * n3;
+			n4 = modelMat * n4;
+
+			verts.push_back(Vertex(glm::vec3(p1), color, glm::vec3(n1), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p2), color, glm::vec3(n2), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p3), color, glm::vec3(n3), glm::vec3()));
+			verts.push_back(Vertex(glm::vec3(p4), color, glm::vec3(n4), glm::vec3()));
 		}
 	}
 

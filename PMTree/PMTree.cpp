@@ -300,10 +300,15 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
 		float r1 = computeRadius(nTaper[level], radius, length, (float)i / nCurveRes[level]);
 		float r2 = computeRadius(nTaper[level], radius, length, (float)(i + 1) / nCurveRes[level]);
 		
-		generateSegment(level, i, modelMat, r1, r2, length, segment_length);
+		float rot = generateSegment(level, i, modelMat, r1, r2, length, segment_length);
 
+		// Z軸方向に移動
 		modelMat = translate(modelMat, vec3(0, 0, segment_length));
 
+		// Z軸周りに回転
+		modelMat = rotate(modelMat, rot, vec3(0, 0, 1));
+
+		// X軸周りに回転
 		if (nCurveBack[level] == 0.0f) {
 			modelMat = rotate(modelMat, deg2rad(genRand(nCurve[level] / nCurveRes[level], nCurveV[level] / nCurveRes[level])), vec3(1, 0, 0));
 		} else {
@@ -327,7 +332,7 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
  * @param stem_length
  * @param segment_length	
  */
-void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
+float PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
 	// 各segmentを、25cmで区切ってcylinderとして描画する
 	int nstacks = ceil(segment_length / 0.25f);
 	for (int i = 0; i < nstacks; ++i) {
@@ -352,7 +357,7 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 
 		generateLeaves(level + 1, modelMat, leaves_per_branch, interval, quality);
 
-		return;
+		return 0.0f;
 	}
 
 	float substem_z = 0.0f;	// substemの位置
@@ -360,7 +365,7 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 	if (level == 0) {
 		if (segment_length * (index + 1) < length_base) {
 			// segmentが全てbaseの一部なので、substemは生成しない
-			return;
+			return 0.0f;
 		} else if (segment_length * index >= length_base) {
 			// segmentが、完全にbaseの外なので、一番下からsubstemを生成出来る
 		} else {
@@ -375,6 +380,8 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 	// z軸まわりに移動
 	substem_z += dist;
 	modelMat = translate(modelMat, vec3(0, 0, substem_z));
+
+	float angle = 0.0f;
 
 	for (int s = 0; s < substems_eff; ++s) {
 		float offset_child = segment_length * index + substem_z;
@@ -394,12 +401,16 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 		generateStem(level + 1, modelMat2, radius_child, length_child);
 
 		// z軸まわりに回転
-		modelMat = rotate(modelMat, deg2rad(genRand(nRotate[level + 1], nRotate[level + 1])), vec3(0, 0, 1));
+		float rot = deg2rad(genRand(nRotate[level + 1], nRotate[level + 1]));
+		modelMat = rotate(modelMat, rot, vec3(0, 0, 1));
+		angle += rot;
 
 		// z軸まわりに移動
 		modelMat = translate(modelMat, vec3(0, 0, dist));
 		substem_z += dist;
 	}
+
+	return angle;
 }
 
 void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, float interval, float quality) {
