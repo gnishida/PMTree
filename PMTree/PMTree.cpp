@@ -117,12 +117,16 @@ PMTree::PMTree(VBORenderManager* rendManager) : rendManager(rendManager) {
 	prunePowerHigh = 0.5;
 
 	colorStem = QColor(30, 162, 0);
-	colorLeaveStem = QColor(100, 255, 40);
-	colorLeave = QColor(70, 255, 20);
+	colorLeave = QColor(100, 255, 40);
 
 	//generate();
 }
 
+/**
+ * XMLファイルから、treeのパラメータを読み込み、モデルを生成する。
+ *
+ * @param filename		treeのXMLファイル
+ */
 void PMTree::load(const QString& filename) {
 	QFile file(filename);
 
@@ -266,6 +270,9 @@ void PMTree::load(const QString& filename) {
 	generate();
 }
 
+/**
+ * パラメータに基づいて、treeモデルを生成する。
+ */
 void PMTree::generate() {
 	rendManager->removeStaticGeometry("tree");
 
@@ -325,6 +332,7 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
  * @param radius2
  * @param stem_length
  * @param segment_length	
+ * @return					Z軸まわりに回転した角度
  */
 float PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
 	// 各segmentを、25cmで区切ってcylinderとして描画する
@@ -338,20 +346,17 @@ float PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1
 			float Z2 = ((float)index * segment_length + segment_length * (float)(i + 1) / (float)nstacks) / stem_length;
 			r2 *= computeFlare(Z2);
 		}
-		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), r1, r2, segment_length / (float)nstacks, colorStem);
+		rendManager->addCylinder("tree", translate(modelMat, vec3(0, 0, segment_length / (float)nstacks * i)), r1, r2, segment_length / (float)nstacks, colorStem, 12);
 	}
 
 	if (level >= levels - 1) {
 		// 葉を生成する
-		float quality = 0.9f;
 		float offset_child = segment_length * index; 
-		int leaves_per_branch = leaves * shapeRatio(4, offset_child / stem_length) * quality;
+		int leaves_per_branch = leaves * shapeRatio(4, offset_child / stem_length) * leafQuality;
 		
 		float interval = segment_length / (leaves_per_branch + 1); // 葉の間の距離
 
-		generateLeaves(level + 1, modelMat, leaves_per_branch, interval, quality);
-
-		return 0.0f;
+		return generateLeaves(level + 1, modelMat, leaves_per_branch, interval);
 	}
 
 	float substem_z = 0.0f;	// substemの位置
@@ -375,7 +380,7 @@ float PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1
 	substem_z += dist;
 	modelMat = translate(modelMat, vec3(0, 0, substem_z));
 
-	float angle = 0.0f;
+	float total_rot = 0.0f;
 
 	for (int s = 0; s < substems_eff; ++s) {
 		float offset_child = segment_length * index + substem_z;
@@ -397,17 +402,28 @@ float PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1
 		// z軸まわりに回転
 		float rot = deg2rad(genRand(nRotate[level + 1], nRotate[level + 1]));
 		modelMat = rotate(modelMat, rot, vec3(0, 0, 1));
-		angle += rot;
+		total_rot += rot;
 
 		// z軸まわりに移動
 		modelMat = translate(modelMat, vec3(0, 0, dist));
 		substem_z += dist;
 	}
 
-	return angle;
+	return total_rot;
 }
 
-void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, float interval, float quality) {
+/**
+ * 葉を生成する。
+ *
+ * @param level					レベル
+ * @param modelMat				モデル行列
+ * @param leaves_per_branch		生成する葉の数
+ * @param interval				生成する葉の間隔
+ * @return						Z軸周りに、回転した角度
+ */
+float PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, float interval) {
+	float total_rot = 0.0f;
+
 	// z軸まわりに移動
 	float z = interval;
 	modelMat = translate(modelMat, vec3(0, 0, z));
@@ -416,8 +432,8 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 		// x軸まわりに回転
 		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level], nDownAngleV[level])), vec3(1, 0, 0));
 
-		float length = leafScale / sqrtf(quality);
-		float width = leafScale * leafScaleX / sqrtf(quality);
+		float length = leafScale / sqrtf(leafQuality);
+		float width = leafScale * leafScaleX / sqrtf(leafQuality);
 		
 		// 少しZ軸方向に移動
 		modelMat2 = translate(modelMat2, vec3(0, 0, length));
@@ -426,15 +442,19 @@ void PMTree::generateLeaves(int level, mat4 modelMat, int leaves_per_branch, flo
 		modelMat2 = rotate(modelMat2, (float)M_PI * 0.5f, vec3(1, 0, 0));
 
 		// 葉を描画
-		rendManager->addCircle("tree", modelMat2, width, length, colorLeave);
+		rendManager->addCircle("tree", modelMat2, width, length, colorLeave, 12);
 
 		// z軸まわりに回転
-		modelMat = rotate(modelMat, deg2rad(genRand(nRotate[level], nRotate[level])), vec3(0, 0, 1));
+		float rot = deg2rad(genRand(nRotate[level], nRotate[level]));
+		modelMat = rotate(modelMat, rot, vec3(0, 0, 1));
+		total_rot += rot;
 
 		// z軸方向に移動
 		modelMat = translate(modelMat, vec3(0, 0, interval));
 		z += interval;
 	}
+
+	return total_rot;
 }
 
 float PMTree::shapeRatio(int shape, float position) {
@@ -521,6 +541,12 @@ float PMTree::genRand(float mean, float variance) {
 	return genRand() * variance * 2.0 + mean - variance;
 }
 
+/**
+ * degreeをradianに変換する。
+ *
+ * @param deg		degree
+ * @return			radian
+ */
 float PMTree::deg2rad(float deg) {
 	return deg * M_PI / 180.0;
 }

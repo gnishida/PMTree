@@ -464,11 +464,9 @@ void VBORenderManager::addCylinder(const QString& geoName, const QVector3D& cent
  * 円柱を構築する。（カラー版）
  * 側面のみ。上面と底面はなし。
  */
-void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color) {
+void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color, int slices, int stacks) {
 	std::vector<Vertex> verts;
 
-	int slices = 10;
-	int stacks = 10;
 	for (int i = 0; i < stacks; ++i) {
 		float z1 = height / stacks * i;
 		float z2 = height / stacks * (i + 1);
@@ -521,7 +519,7 @@ void VBORenderManager::addCylinder(const QString& geoName, const glm::mat4& mode
  * @param radius1		X軸方向の半径
  * @param radius2		Y軸方向の半径
  */
-void VBORenderManager::addCircle(const QString& geoName, const glm::mat4& modelMat, float radius1, float radius2, const QColor& color) {
+void VBORenderManager::addCircle(const QString& geoName, const glm::mat4& modelMat, float radius1, float radius2, const QColor& color, int slices) {
 	std::vector<Vertex> verts;
 
 	// 法線ベクトル
@@ -531,7 +529,6 @@ void VBORenderManager::addCircle(const QString& geoName, const glm::mat4& modelM
 	glm::vec4 p0(0, 0, 0, 1.0f);
 	p0 = modelMat * p0;
 	
-	int slices = 8;
 	for (int i = 0; i < slices; ++i) {
 		float theta1 = M_PI * 2.0f * i / slices;
 		float theta2 = M_PI * 2.0f * (i + 1) / slices;

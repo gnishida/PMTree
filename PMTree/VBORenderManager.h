@@ -82,8 +82,8 @@ public:
 	void addPrism(const QString& geoName, vector<QVector3D>& polygon, float baseHeight, float topHeight, const QString& textureName);
 	void addWedge(const QString& geoName, vector<QVector3D>& polygon, float baseHeight, float topHeight, const QString& textureName);
 	void addCylinder(const QString& geoName, const QVector3D& center, float baseRadius, float topRadius, float height, const QString& textureName);*/
-	void addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color);
-	void addCircle(const QString& geoName, const glm::mat4& modelMat, float length, float width, const QColor& color);
+	void addCylinder(const QString& geoName, const glm::mat4& modelMat, float baseRadius, float topRadius, float height, const QColor& color, int slices = 36, int stacks = 1);
+	void addCircle(const QString& geoName, const glm::mat4& modelMat, float length, float width, const QColor& color, int slices = 36);
 
 private:
 
