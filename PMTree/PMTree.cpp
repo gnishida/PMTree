@@ -23,27 +23,26 @@ PMTree::PMTree() {
 	lobes = 5.0;
 	lobeDepth = 0.07;
 	flare = 0.6;
+	nScale.resize(levels + 1);
+	nScaleV.resize(levels + 1);
+	nLength.resize(levels + 1);
+	nLengthV.resize(levels + 1);
+	nTaper.resize(levels + 1);
+	nBaseSplits.resize(levels + 1);
+	nSegSplits.resize(levels + 1);
+	nSplitAngle.resize(levels + 1);
+	nSplitAngleV.resize(levels + 1);
+	nCurveRes.resize(levels + 1);
+	nCurve.resize(levels + 1);
+	nCurveBack.resize(levels + 1);
+	nCurveV.resize(levels + 1);
+	nDownAngle.resize(levels + 1);
+	nDownAngleV.resize(levels + 1);
+	nRotate.resize(levels + 1);
+	nRotateV.resize(levels + 1);
+	nBranches.resize(levels + 1);
 
-	nScale.resize(levels);
-	nScaleV.resize(levels);
-	nLength.resize(levels);
-	nLengthV.resize(levels);
-	nTaper.resize(levels);
-	nBaseSplits.resize(levels);
-	nSegSplits.resize(levels);
-	nSplitAngle.resize(levels);
-	nSplitAngleV.resize(levels);
-	nCurveRes.resize(levels);
-	nCurve.resize(levels);
-	nCurveBack.resize(levels);
-	nCurveV.resize(levels);
-	nDownAngle.resize(levels);
-	nDownAngleV.resize(levels);
-	nRotate.resize(levels);
-	nRotateV.resize(levels);
-	nBranches.resize(levels);
 
-	nBranches[0] = 10.0;	// <- 論文ではないけど。。。
 	nScale[0] = 1.0;
 	nScaleV[0] = 0.0;
 	nLength[0] = 1.0;
@@ -59,7 +58,7 @@ PMTree::PMTree() {
 	nCurveV[0] = 20;
 
 	nDownAngle[1] = 60.0;
-	nDownAngleV[1] = -5.0;//-50.0;
+	nDownAngleV[1] = -50.0;
 	nRotate[1] = 140.0;
 	nRotateV[1] = 0.0;
 	nBranches[1] = 50.0;
@@ -70,9 +69,9 @@ PMTree::PMTree() {
 	nSplitAngle[1] = 0.0;
 	nSplitAngleV[1] = 0.0;
 	nCurveRes[1] = 5;
-	nCurve[1] = -4.0;//-40;
+	nCurve[1] = -40;
 	nCurveBack[1] = 0;
-	nCurveV[1] = 5.0;//50;
+	nCurveV[1] = 50;
 
 	nDownAngle[2] = 45.0;
 	nDownAngleV[2] = 10.0;
@@ -90,21 +89,21 @@ PMTree::PMTree() {
 	nCurveBack[2] = 0;
 	nCurveV[2] = 75;
 
-	nDownAngle[2] = 45.0;
-	nDownAngleV[2] = 10.0;
-	nRotate[2] = 77.0;
-	nRotateV[2] = 0.0;
-	nBranches[2] = 10.0;
-	nLength[2] = 0.0;
-	nLengthV[2] = 0.0;
-	nTaper[2] = 1.0;
-	nSegSplits[2] = 0;
-	nSplitAngle[2] = 0.0;
-	nSplitAngleV[2] = 0.0;
-	nCurveRes[2] = 1;
-	nCurve[2] = 0;
-	nCurveBack[2] = 0;
-	nCurveV[2] = 0;
+	nDownAngle[3] = 45.0;
+	nDownAngleV[3] = 10.0;
+	nRotate[3] = 77.0;
+	nRotateV[3] = 0.0;
+	nBranches[3] = 10.0;
+	nLength[3] = 0.0;
+	nLengthV[3] = 0.0;
+	nTaper[3] = 1.0;
+	nSegSplits[3] = 0;
+	nSplitAngle[3] = 0.0;
+	nSplitAngleV[3] = 0.0;
+	nCurveRes[3] = 1;
+	nCurve[3] = 0;
+	nCurveBack[3] = 0;
+	nCurveV[3] = 0;
 
 	leaves = 25;
 	leafShapes = 0;
@@ -135,7 +134,6 @@ void PMTree::generate(VBORenderManager* rendManager) {
 
 	mat4 modelMat;
 
-	glPushMatrix();
 	for (int i = 0; i < nCurveRes[0]; ++i) {
 		float length = length0 / nCurveRes[0];
 
@@ -148,9 +146,8 @@ void PMTree::generate(VBORenderManager* rendManager) {
 		generateSegment(0, i, modelMat, r1, r2, length0, length);
 
 		modelMat = translate(modelMat, vec3(0, 0, length));
-		modelMat = rotate(modelMat, deg2rad(genRand(nCurve[0], nCurveV[0])), vec3(1, 0, 0));
+		modelMat = rotate(modelMat, deg2rad(genRand(nCurve[0] / nCurveRes[0], nCurveV[0] / nCurveRes[0])), vec3(1, 0, 0));
 	}
-	glPopMatrix();
 }
 
 /**
@@ -171,7 +168,6 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
 		unit_taper = 0.0;
 	}
 
-	glPushMatrix();
 	for (int i = 0; i < nCurveRes[level]; ++i) {
 		float segment_length = length / nCurveRes[level];
 
@@ -181,13 +177,11 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
 		float r1 = taper_z1;
 		float r2 = taper_z2;
 
-		//generateSegment(level, i, modelMat, r1, r2, length, segment_length);
-		rendManager->addCylinder("tree", modelMat, QVector3D(0, 0, 0), r1, r2, segment_length, QColor(i * 100, 0, 255));
+		generateSegment(level, i, modelMat, r1, r2, length, segment_length);
 
 		modelMat = translate(modelMat, vec3(0, 0, segment_length));
-		modelMat = rotate(modelMat, deg2rad(genRand(nCurve[level], nCurveV[level])), vec3(1, 0, 0));
+		modelMat = rotate(modelMat, deg2rad(genRand(nCurve[level] / nCurveRes[level], nCurveV[level] / nCurveRes[level])), vec3(1, 0, 0));
 	}
-	glPopMatrix();
 }
 
 /**
@@ -202,22 +196,25 @@ void PMTree::generateStem(int level, mat4 modelMat, float radius, float length) 
  * @param segment_length	
  */
 void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1, float radius2, float stem_length, float segment_length) {
-	rendManager->addCylinder("tree", modelMat, QVector3D(0, 0, 0), radius1, radius2, segment_length, QColor(index * 100, 0, 255));
+	rendManager->addCylinder("tree", modelMat, QVector3D(0, 0, 0), radius1, radius2, segment_length, QColor(30, 162, 0));
 
-	float length_base = baseSize * genRand(scale, scaleV);
+	if (level >= levels - 1) return;
 
 	float start_substem = 0.0f;	// substemを開始するoffset位置
 
-	if (segment_length * (index + 1) < length_base) {
-		// segmentが全てbaseの一部なので、substemは生成しない
-		return;
-	} else if (segment_length * index >= length_base) {
-		// segmentが、完全にbaseの外なので、一番下からsubstemを生成出来る
-	} else {
-		start_substem = length_base - segment_length * (int)(length_base / segment_length);
+	float length_base = baseSize * genRand(scale, scaleV);
+	if (level == 0) {
+		if (segment_length * (index + 1) < length_base) {
+			// segmentが全てbaseの一部なので、substemは生成しない
+			return;
+		} else if (segment_length * index >= length_base) {
+			// segmentが、完全にbaseの外なので、一番下からsubstemを生成出来る
+		} else {
+			start_substem = length_base - segment_length * (int)(length_base / segment_length);
+		}
 	}
 
-	float subst_per_segm = nBranches[level] / nCurveRes[level];
+	float subst_per_segm = nBranches[level + 1] / nCurveRes[level];
 	int substems_eff = subst_per_segm / segment_length * (segment_length - start_substem) + 0.5f; // substemの数
 	float dist = (segment_length - start_substem) / (substems_eff + 1);	// substem間の距離
 
@@ -232,7 +229,12 @@ void PMTree::generateSegment(int level, int index, mat4 modelMat, float radius1,
 		mat4 modelMat2 = rotate(modelMat, deg2rad(genRand(nDownAngle[level + 1], nDownAngleV[level + 1])), vec3(1, 0, 0));
 
 		float length_max = genRand(nLength[level + 1], nLengthV[level + 1]);
-		float length_child = stem_length * length_max * shapeRatio(shape, (stem_length - offset_child) / (stem_length - length_base));
+		float length_child;
+		if (level == 0) {
+			length_child = stem_length * length_max * shapeRatio(shape, (stem_length - offset_child) / (stem_length - length_base));
+		} else {
+			length_child = length_max * (stem_length - 0.6f * offset_child);
+		}
 		float radius_child = radius1 * (length_child / stem_length);
 
 		//rendManager->addCylinder("tree", modelMat2, QVector3D(0, 0, 0), 0.1, 0.1, 2, QColor(index * 100, 0, 255));
@@ -286,32 +288,6 @@ float PMTree::genRand() {
  */
 float PMTree::genRand(float mean, float variance) {
 	return genRand() * variance * 2.0 + mean - variance;
-	/*
-	float m = mean;
-	float s = sqrt(variance);
-
-	float x1, x2, w, y1;
-	static float y2;
-	static int use_last = 0;
-
-	if (use_last) {
-		y1 = y2;
-		use_last = 0;
-	} else {
-		do {
-			x1 = 2.0 * genRand(0.0f, 1.0f) - 1.0;
-			x2 = 2.0 * genRand(0.0f, 1.0f) - 1.0;
-			w = x1 * x1 + x2 * x2;
-		} while ( w >= 1.0 );
-
-		w = sqrt( (-2.0 * log( w ) ) / w );
-		y1 = x1 * w;
-		y2 = x2 * w;
-		use_last = 1;
-	}
-
-	return m + y1 * s;
-	*/
 }
 
 float PMTree::deg2rad(float deg) {
